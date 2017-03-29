@@ -8,7 +8,7 @@
  # WARNING! All changes made in this file will be lost!
 
 from PyQt5 import QtCore, QtGui, QtWidgets
-import ConfigParser
+
 import configparser
 import socket
 import ssl
@@ -801,10 +801,14 @@ class receive(threading.Thread):
         self.test = test
     def run(self):
         while True:
-            data = self.sslsocket.recv(int(buffer_size)).decode()
-            print(data)
-            self.test.getMessage(data)
-            if not data:
+            try:
+                data = self.sslsocket.recv(int(buffer_size)).decode()
+                print(data)
+                self.test.getMessage(data)
+                if not data:
+                    self.test.getMessage("disconnected")
+                    self.sslsocket.close()
+            except OSError:
                 self.test.getMessage("disconnected")
                 self.sslsocket.close()
 

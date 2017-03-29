@@ -31,13 +31,18 @@ class SSLServer(threading.Thread):
                 print(data)
             if data:
                 data2 = str(data).split(" ")
-                if data2[1].startswith("/") == True:
+                try:
+                    if data2[1].startswith("/") == True:
+                        if args.verbosity == 1:
+                            print("[!] received command")
+
+                        data2 = data2[1][1:]
+                        command = self.serverCommands(str(data2))
+                        command = "["+data2+"]" + " " + command
+                        self.broadcast(command, self.conn, self.addr, 1)
+                except IndexError as e:
                     if args.verbosity == 1:
-                        print("[!] received command")
-                    data2 = data2[1][1:]
-                    command = self.serverCommands(str(data2))
-                    command = "["+data2+"]" + " " + command
-                    self.broadcast(command, self.conn, self.addr, 1)
+                        print("Error: " + e)
                 else:
                     self.broadcast(data, self.conn, self.addr, 0)
             else:
@@ -56,10 +61,10 @@ class SSLServer(threading.Thread):
     def serverCommands(self, command):
         if args.verbosity == 1:
             print("[CMD] " + command)
-        help = "There is no help..."
-        if command == 'help':
-            return help
-        if command == 'user':
+        if str(command) == 'help':
+            helpmsg = "There is no help..."
+            return helpmsg
+        if str(command) == 'user':
             users = activeUser
             users = ",".join(users)
             return users
@@ -71,6 +76,8 @@ class SSLServer(threading.Thread):
     def broadcast(self, data, conn, addr, flag):
         #print(bcolors.OKGREEN + "SOCKET LIST: \n"  + bcolors.ENDC)
         #print(bcolors.OKGREEN + str(socketList) + bcolors.ENDC)
+        if args.verbosity == 1:
+            print("FLAG: " + str(flag))
         for i in range(0, len(socketList)):
             if socketListPort[i] != addr[1] and flag == 0:
                 try:
