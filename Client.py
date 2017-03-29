@@ -745,7 +745,9 @@ class Ui_Acidchat(object):
          self.menuMenu.addSeparator()
          self.menuMenu.addAction(self.actionQuit)
          self.menuBar.addAction(self.menuMenu.menuAction())
+         # Send message
          self.sendButton.clicked.connect(self.send)
+         # Quit
          self.actionQuit.triggered.connect(self.exit)
          self.retranslateUi(Acidchat)
          QtCore.QMetaObject.connectSlotsByName(Acidchat)
@@ -770,18 +772,20 @@ class Ui_Acidchat(object):
          certfile='certs/client.crt',keyfile='certs/client.key', ciphers='ECDH')
          self.sslsocket.connect((ip, int(port)))
          self.listWidget.addItem("connected to the server")
+         self.sslsocket.send(username.encode())
          return self.sslsocket
 
     def send(self):
         print("send triggered")
         msg = self.textEdit.toPlainText()
-        msg = "["+username+" ]" + msg
+        self.listWidget.addItem("[YOU] " + msg)
+        msg = "["+username+"] " + msg
         self.sslsocket.send(msg.encode())
         self.textEdit.clear()
 
     def exit(self):
         self.sslsocket.close()
-        QtGui.QGuiApplication.quit()
+        sys.exit()
 
         #self.listWidget.addItem(str(message))
 
@@ -798,6 +802,7 @@ class receive(threading.Thread):
             #Ui_Acidchat.getMessage(str(data))
             if not data:
                 print("disconnect")
+                self.sslsocket.close()
                 sys.exit()
 
 
