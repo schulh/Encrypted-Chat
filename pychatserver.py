@@ -36,7 +36,7 @@ class SSLServer(threading.Thread):
                         print("[!] received command")
                     data2 = data2[1][1:]
                     command = self.serverCommands(str(data2))
-                    command = "["+data2"]" + " " + command
+                    command = "["+data2+"]" + " " + command
                     self.broadcast(command, self.conn, self.addr, 1)
                 else:
                     self.broadcast(data, self.conn, self.addr, 0)
