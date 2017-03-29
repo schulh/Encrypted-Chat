@@ -5,7 +5,7 @@ import ssl
 import argparse
 from colors import bcolors
 import time
-
+import sys
 
 
 class SSLServer(threading.Thread):
@@ -21,9 +21,9 @@ class SSLServer(threading.Thread):
             print(bcolors.OKBLUE + "STARTED NEW THREAD"  + bcolors.ENDC)
         user = self.conn.recv(buffer_size).decode()
         activeUser.append(user)
-        data = "[+]" + str(user) + " connected"
+        data = "[+] " + str(user) + " connected"
         self.broadcast(data, self.conn, self.addr, 0)
-        welcomemsg = "Welcome " + user + "!\n" + "Active User: " + ",".join(users)
+        welcomemsg = "Welcome " + user + "!\n" + "Active User: " + ",".join(activeUser)
         self.broadcast(welcomemsg, self.conn, self.addr, 1)
         while True:
             data = self.conn.recv(buffer_size).decode()
@@ -41,12 +41,17 @@ class SSLServer(threading.Thread):
                 else:
                     self.broadcast(data, self.conn, self.addr, 0)
             else:
-                if conn in socketList:
-                    socketList.remove(conn)
+                if self.conn in socketList:
+                    data = "[-] " + str(user) + "disconnected"
+                    self.broadcast(data, self.conn, self.addr, 0)
+                    socketList.remove(self.conn)
                     if args.verbosity == 1:
                         print(bcolors.FAIL + "[!] removed " + str(conn) + bcolors.ENDC)
-                    data = "[-] " + str(user) + "disconnected"
-                    SSLServer.broadcast(self, data, self.conn, self.addr, 0)
+                    self.conn.close()
+                    self.isAlive = False
+                    sys.exit()
+
+
 
     def serverCommands(self, command):
         if args.verbosity == 1:
@@ -89,9 +94,9 @@ parser.add_argument("--verbosity", "-v", action='count', help="increase output v
 parser.add_argument("--ip", help="listening ip")
 parser.add_argument("--port", help="listening port", type=int)
 args = parser.parse_args()
+
 if args.verbosity:
     print("verbosity turned on")
-
 if args.ip:
     ip = args.ip
 else:
@@ -105,16 +110,7 @@ buffer_size = 2048
 
 
 
-"""
-sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-sslsocket = ssl.SSLContext(protocol=1)
-sslsocket.load_cert_chain('certs/ca.crt', keyfile='certs/ca.crt', password='henrik')
-#sslsocket.set_ciphers('ECDH')
-sslsocket.load_dh_params('certs/dhparams.pem')
-sslsocket.wrap_socket(sock, do_handshake_on_connect=True, server_side=True)
-sslsocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)#
-sslsocket.bind((ip,port))
-"""
+
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 mySocket = ssl.wrap_socket(sock,keyfile='certs/ca.key', certfile='certs/ca.crt', \
 cert_reqs=ssl.CERT_NONE, ssl_version=ssl.PROTOCOL_TLSv1_2, \
