@@ -13,38 +13,77 @@ class SSLServer(threading.Thread):
         threading.Thread.__init__(self)
         self.conn = conn
         self.addr = addr
-        print(bcolors.OKGREEN + "[+] New connection from " + str(conn) + bcolors.ENDC)
+        if args.verbosity == 1:
+            print(bcolors.OKGREEN + "[+] New connection from " + str(conn) + bcolors.ENDC)
 
     def run(self):
-        print(bcolors.OKBLUE + "STARTED NEW THREAD"  + bcolors.ENDC)
+        if args.verbosity == 1:
+            print(bcolors.OKBLUE + "STARTED NEW THREAD"  + bcolors.ENDC)
         user = self.conn.recv(buffer_size).decode()
+        activeUser.append(user)
         data = "[+]" + str(user) + " connected"
-        SSLServer.broadcast(self, data, self.conn, self.addr)
+        self.broadcast(data, self.conn, self.addr, 0)
         while True:
             data = self.conn.recv(buffer_size).decode()
+            if args.verbosity == 1:
+                print(data)
             if data:
-                SSLServer.broadcast(self, data, self.conn, self.addr)
+                data2 = str(data).split(" ")
+                if data2[1].startswith("/") == True:
+                    if args.verbosity == 1:
+                        print("[!] received command")
+                    data2 = data2[1][1:]
+                    command = self.serverCommands(str(data2))
+                    command = data2 + " " + command
+                    self.broadcast(command, self.conn, self.addr, 1)
+                else:
+                    self.broadcast(data, self.conn, self.addr, 0)
             else:
                 if conn in socketList:
                     socketList.remove(conn)
-                    print(bcolors.FAIL + "[!] removed " + str(conn) + bcolors.ENDC)
+                    if args.verbosity == 1:
+                        print(bcolors.FAIL + "[!] removed " + str(conn) + bcolors.ENDC)
                     data = "[-] " + str(user) + "disconnected"
-                    SSLServer.broadcast(self, data, self.conn, self.addr)
+                    SSLServer.broadcast(self, data, self.conn, self.addr, 0)
 
-    def broadcast(self, data, conn, addr):
+    def serverCommands(self, command):
+        if args.verbosity == 1:
+            print("[CMD] " + command)
+        help = "There is no help..."
+        if command == 'help':
+            return help
+        if command == 'user':
+            users = activeUser
+            users = ','.join(users)
+            return users
+        else:
+            return "not found"
+
+
+
+    def broadcast(self, data, conn, addr, flag):
         #print(bcolors.OKGREEN + "SOCKET LIST: \n"  + bcolors.ENDC)
         #print(bcolors.OKGREEN + str(socketList) + bcolors.ENDC)
         for i in range(0, len(socketList)):
-            if socketListPort[i] != addr[1]:
+            if socketListPort[i] != addr[1] and flag == 0:
                 try:
                     socketList[i].send(data.encode())
-                    print("Message sent to: " + str(socketListPort[i]))
+                    if args.verbosity == 1:
+                        print("Message sent to: " + str(socketListPort[i]))
+                except BrokenPipeError:
+                    conn.close()
+            elif socketListPort[i] == addr[1] and flag == 1:
+                try:
+                    socketList[i].send(data.encode())
+                    if args.verbosity == 1:
+                        print("Message sent to: " + str(socketListPort[i]))
                 except BrokenPipeError:
                     conn.close()
 
 
+
 parser = argparse.ArgumentParser()
-parser.add_argument("--verbosity", help="increase output verbosity")
+parser.add_argument("--verbosity", "-v", action='count', help="increase output verbosity")
 parser.add_argument("--ip", help="listening ip")
 parser.add_argument("--port", help="listening port", type=int)
 args = parser.parse_args()
@@ -62,12 +101,7 @@ else:
 
 buffer_size = 2048
 
-sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-mySocket = ssl.wrap_socket(sock,keyfile='certs/ca.key', certfile='certs/ca.crt', \
-cert_reqs=ssl.CERT_NONE, ssl_version=ssl.PROTOCOL_TLSv1_2, \
-ciphers='ECDH', do_handshake_on_connect=True)
-mySocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-mySocket.bind((ip,port))
+
 
 """
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -89,6 +123,7 @@ mySocket.bind((ip,port))
 threads = []
 socketListPort = []
 socketList = []
+activeUser = []
 
 
 while True:

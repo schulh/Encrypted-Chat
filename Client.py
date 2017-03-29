@@ -799,7 +799,6 @@ class receive(threading.Thread):
             data = self.sslsocket.recv(int(buffer_size)).decode()
             print(data)
             self.test.getMessage(data)
-            #Ui_Acidchat.getMessage(str(data))
             if not data:
                 print("disconnect")
                 self.sslsocket.close()
@@ -816,6 +815,7 @@ username = config['CLIENT']['username']
 ip = config['CLIENT']['ip']
 port = config['CLIENT']['port']
 buffer_size = config['CLIENT']['buffer']
+
 threads = []
 
 if __name__ == "__main__":
