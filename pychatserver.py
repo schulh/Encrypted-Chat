@@ -23,6 +23,8 @@ class SSLServer(threading.Thread):
         activeUser.append(user)
         data = "[+]" + str(user) + " connected"
         self.broadcast(data, self.conn, self.addr, 0)
+        welcomemsg = "Welcome " + user + "!\n" + "Active User: " + ",".join(users)
+        self.broadcast(welcomemsg, self.conn, self.addr, 1)
         while True:
             data = self.conn.recv(buffer_size).decode()
             if args.verbosity == 1:
@@ -34,7 +36,7 @@ class SSLServer(threading.Thread):
                         print("[!] received command")
                     data2 = data2[1][1:]
                     command = self.serverCommands(str(data2))
-                    command = data2 + " " + command
+                    command = "["+data2"]" + " " + command
                     self.broadcast(command, self.conn, self.addr, 1)
                 else:
                     self.broadcast(data, self.conn, self.addr, 0)
@@ -54,7 +56,7 @@ class SSLServer(threading.Thread):
             return help
         if command == 'user':
             users = activeUser
-            users = ','.join(users)
+            users = ",".join(users)
             return users
         else:
             return "not found"
