@@ -8,6 +8,7 @@
  # WARNING! All changes made in this file will be lost!
 
 from PyQt5 import QtCore, QtGui, QtWidgets
+import ConfigParser
 import configparser
 import socket
 import ssl
@@ -742,8 +743,11 @@ class Ui_Acidchat(object):
          Acidchat.setMenuBar(self.menuBar)
          self.actionQuit = QtWidgets.QAction(Acidchat)
          self.actionQuit.setObjectName("actionQuit")
+         self.actionClear = QtWidgets.QAction(Acidchat)
+         self.actionClear.setObjectName("actionClear")
          self.menuMenu.addSeparator()
          self.menuMenu.addAction(self.actionQuit)
+         self.menuMenu.addAction(self.actionClear)
          self.menuBar.addAction(self.menuMenu.menuAction())
          # Send message
          self.sendButton.clicked.connect(self.send)
@@ -759,6 +763,7 @@ class Ui_Acidchat(object):
          self.sendButton.setText(_translate("Acidchat", "Send"))
          self.cancelButton.setText(_translate("Acidchat", "Cancel"))
          self.menuMenu.setTitle(_translate("Acidchat", "Menu"))
+         self.actionClear.setText(_translate("Acidchat", "Clear"))
          self.actionQuit.setText(_translate("Acidchat", "Quit"))
          #self.connect()
 
@@ -800,9 +805,9 @@ class receive(threading.Thread):
             print(data)
             self.test.getMessage(data)
             if not data:
-                print("disconnect")
+                self.test.getMessage("disconnected")
                 self.sslsocket.close()
-                sys.exit()
+
 
 
 
