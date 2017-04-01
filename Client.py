@@ -774,9 +774,11 @@ class Ui_Acidchat(object):
     def connect(self):
          self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
          self.sslsocket = ssl.wrap_socket(self.s,ssl_version=ssl.PROTOCOL_TLSv1_2,\
-         certfile='certs/client.crt',keyfile='certs/client.key', ciphers='ECDH')
+         ciphers='ECDH')
+         #certfile='certs/client.crt',keyfile='certs/client.key', ciphers='ECDH')
          self.sslsocket.connect((ip, int(port)))
          self.listWidget.addItem("connected to the server")
+         self.listWidget.addItem(str(self.sslsocket.cipher()))
          self.sslsocket.send(username.encode())
          return self.sslsocket
 
