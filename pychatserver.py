@@ -6,20 +6,23 @@ import argparse
 from colors import bcolors
 import time
 import sys
-
+import logging
 
 class SSLServer(threading.Thread):
     def __init__(self, conn, addr):
         threading.Thread.__init__(self)
         self.conn = conn
         self.addr = addr
+        logging.info("New connection from " + str(conn))
         if args.verbosity == 1:
             print(bcolors.OKGREEN + "[+] New connection from " + str(conn) + bcolors.ENDC)
 
     def run(self):
+        logging.info("created new thread")
         if args.verbosity == 1:
-            print(bcolors.OKBLUE + "STARTED NEW THREAD"  + bcolors.ENDC)
+            print(bcolors.OKBLUE + "STARTED NEW THREAD" + bcolors.ENDC)
         user = self.conn.recv(buffer_size).decode()
+        logging.info("User " + user + " entered the chatroom")
         activeUser.append(user)
         data = "[+] " + str(user) + " connected"
         self.broadcast(data, self.conn, self.addr, 0)
@@ -27,16 +30,18 @@ class SSLServer(threading.Thread):
         self.broadcast(welcomemsg, self.conn, self.addr, 1)
         while True:
             data = self.conn.recv(buffer_size).decode()
+            logging.debug("received data from " + "'" + str(user) + "': " + str(data))
             if args.verbosity == 1:
                 print(data)
             if data:
                 data2 = str(data).split(" ")
                 try:
                     if data2[1].startswith("/") == True:
+
                         if args.verbosity == 1:
                             print("[!] received command")
-
                         data2 = data2[1][1:]
+                        logging.info("received command:" + str(data2) + "from " + str(user) )
                         command = self.serverCommands(str(data2))
                         command = "["+data2+"]" + " " + command
                         self.broadcast(command, self.conn, self.addr, 1)
@@ -50,6 +55,7 @@ class SSLServer(threading.Thread):
                     data = "[-] " + str(user) + "disconnected"
                     self.broadcast(data, self.conn, self.addr, 0)
                     socketList.remove(self.conn)
+                    logging.info(user + " disconnected")
                     if args.verbosity == 1:
                         print(bcolors.FAIL + "[!] removed " + str(conn) + bcolors.ENDC)
                     self.conn.close()
@@ -92,6 +98,7 @@ class SSLServer(threading.Thread):
                     if args.verbosity == 1:
                         print("Message sent to: " + str(socketListPort[i]))
                 except BrokenPipeError:
+                    logging.CRITICAL("Broken Pipe: " + str(conn))
                     conn.close()
 
 
@@ -100,10 +107,12 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--verbosity", "-v", action='count', help="increase output verbosity")
 parser.add_argument("--ip", help="listening ip")
 parser.add_argument("--port", help="listening port", type=int)
+parser.add_argument("--logging", help="log output", type=str)
 args = parser.parse_args()
 
 if args.verbosity:
     print("verbosity turned on")
+    print("LOG LEVEL: " + args.logging)
 if args.ip:
     ip = args.ip
 else:
@@ -113,9 +122,16 @@ if args.port:
 else:
     port = 50000
 
+if args.logging:
+    if args.logging == "info":
+        args.logging = logging.INFO
+    if args.logging == "debug":
+        args.logging = logging.DEBUG
+
+
+logging.basicConfig(filename='/var/log/acidchat.log', level=args.logging, format='%(asctime)s:%(levelname)s: %(message)s')
 buffer_size = 2048
-
-
+logging.info("started server")
 
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
