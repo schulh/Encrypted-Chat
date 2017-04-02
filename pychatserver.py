@@ -41,7 +41,7 @@ class SSLServer(threading.Thread):
                         if args.verbosity == 1:
                             print("[!] received command")
                         data2 = data2[1][1:]
-                        logging.info("received command:" + str(data2) + "from " + str(user) )
+                        # logging.info("received command '" + str(data2) + "' from " + str(user) )
                         command = self.serverCommands(str(data2))
                         command = "["+data2+"]" + " " + command
                         self.broadcast(command, self.conn, self.addr, 1)
@@ -88,6 +88,7 @@ class SSLServer(threading.Thread):
             if socketListPort[i] != addr[1] and flag == 0:
                 try:
                     socketList[i].send(data.encode())
+                    logging.debug("Message sent to: " + str(socketListPort[i]))
                     if args.verbosity == 1:
                         print("Message sent to: " + str(socketListPort[i]))
                 except BrokenPipeError:
@@ -98,7 +99,7 @@ class SSLServer(threading.Thread):
                     if args.verbosity == 1:
                         print("Message sent to: " + str(socketListPort[i]))
                 except BrokenPipeError:
-                    logging.CRITICAL("Broken Pipe: " + str(conn))
+                    logging.critical("Broken Pipe: " + str(conn))
                     conn.close()
 
 
@@ -112,7 +113,7 @@ args = parser.parse_args()
 
 if args.verbosity:
     print("verbosity turned on")
-    print("LOG LEVEL: " + args.logging)
+    print("LOG LEVEL: " + str(args.logging))
 if args.ip:
     ip = args.ip
 else:
@@ -125,8 +126,14 @@ else:
 if args.logging:
     if args.logging == "info":
         args.logging = logging.INFO
-    if args.logging == "debug":
+    elif args.logging == "debug":
         args.logging = logging.DEBUG
+    elif args.logging == "warning":
+        args.logging = logging.WARNING
+    elif args.logging == "critical":
+        args.logging = logging.CRITICAL
+else:
+    args.logging = logging.INFO
 
 
 logging.basicConfig(filename='/var/log/acidchat.log', level=args.logging, format='%(asctime)s:%(levelname)s: %(message)s')
